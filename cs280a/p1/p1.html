@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CS280a Project 0 – My Results</title>
+  <meta name="description" content="Project 0: Becoming Friends with Your Camera – results and discussion." />
+  <style>
+    :root{
+      --maxw: 1000px;
+      --accent: #003262; 
+      --gold: #FDB515;   
+      --muted:#666;
+      --bg:#fff;
+      --ink:#111;
+      --code:#f4f4f4;
+      --card:#fafafa;
+      --border:#e6e6e6;
+    }
+    html,body{margin:0; padding:0; height:100%; background:var(--bg); color:var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; line-height:1.6}
+    a{color:var(--accent); text-decoration: none}
+    a:hover{ text-decoration: underline }
+    header{
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, #fdfdfd, #fcfcfc);
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 1.5rem }
+    .brand{ display:flex; gap:1rem; align-items:center }
+    .brand img{ width:64px; height:64px }
+    .brand h1{ margin:0; font-size: clamp(1.1rem, 2vw + 0.8rem, 1.8rem)}
+    .meta{ color:var(--muted); font-size:0.95rem }
+    .due{ color:#9E0000; font-weight:700 }
+
+    nav.toc{ position: sticky; top:0; background:rgba(255,255,255,.9); backdrop-filter:saturate(120%) blur(6px); border-bottom:1px solid var(--border) }
+    nav.toc .wrap{ display:flex; gap:1.25rem; flex-wrap:wrap; align-items:center }
+    nav.toc a{ padding: .6rem .4rem; font-weight:600 }
+
+    h2{ text-align:center; font-variant: small-caps; margin: 1.2rem 0 0.8rem }
+    h2 span{ font-variant: normal; display:block; font-size:1rem; color:var(--muted) }
+    h3{ margin:1.5rem 0 0.6rem; font-variant: small-caps }
+    p{ margin:0.5rem 0 }
+    code{ background:var(--code); padding:0.1em 0.35em; border-radius:4px }
+
+    .section{ padding: 0.5rem 0 1.25rem; border-bottom:1px solid var(--border) }
+    .lead{ font-size:1.05rem }
+
+    .grid{ display:grid; grid-template-columns: repeat(12, 1fr); gap: 1rem }
+    .col-6{ grid-column: span 6 }
+    .col-12{ grid-column: span 12 }
+    @media (max-width: 800px){ .col-6{ grid-column: span 12 } }
+
+    figure{ margin:0; background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden }
+    figure img, figure video{ display:block; width:100%; height:auto }
+    figcaption{ padding: .6rem .8rem; font-size:.95rem; color:#333; background:#fff }
+
+    .callout{ border-left:4px solid var(--gold); background:#fff9e6; padding: .7rem .9rem; border-radius:6px; margin: .8rem 0 }
+    .pill{ background:var(--gold); color:#111; padding:.15rem .45rem; border-radius:999px; font-weight:700; font-size:.8rem }
+
+    footer{ color:var(--muted); font-size:.9rem; padding: 2rem 0; text-align:center }
+
+    @media print{
+      nav.toc{ display:none }
+      a[href]:after{ content:" (" attr(href) ")"; font-size:0.9em }
+      .wrap{ padding: 0.5rem }
+      figure{ break-inside: avoid }
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== HEADER ===== -->
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div>
+          <h1>Project 0: Becoming Friends with Your Camera — <em>My Results</em></h1>
+          <div class="meta">
+            <strong>Course:</strong> CS280a — Intro to Computer Vision & Computational Photography · 
+            <strong>Author:</strong> Hossein Momeni
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <main class="wrap">
+
+
+    <!-- ===== PART 1 ===== -->
+    <section id="part1" class="section">
+      <h2>Part 1: Selfie — Wrong vs. Right</h2>
+      <p>Close up wide angle vs step-back + zoom for the same face size.</p>
+      <div class="grid">
+        <div class="col-6">
+          <figure>
+            <img src="selfie_close.jpg" alt="Close-up selfie (wide)" />
+            <figcaption><strong>Close-up (wide)</strong>. Note the exaggerated nose and perspective distortion.</figcaption>
+          </figure>
+        </div>
+        <div class="col-6">
+          <figure>
+            <img src="selfie_far.jpg" alt="Stepped back + zoom (same framing)" />
+            <figcaption><strong>Stepped back + zoom</strong>. Facial proportions appear more natural.</figcaption>
+          </figure>
+        </div>
+      </div>
+      <h3>Observation</h3>
+      <p>With increased subject distance and a longer focal length, rays approach parallel for facial features.</p>
+    </section>
+
+    <!-- ===== PART 2 ===== -->
+    <section id="part2" class="section">
+      <h2>Part 2: Architectural Perspective Compression</h2>
+      <p>Zoomed-in from afar vs moved-forward no-zoom to match framing.</p>
+      <div class="grid">
+        <div class="col-6">
+          <figure>
+            <img src="street_zoom.jpg" alt="Zoomed-in long street" />
+          </figure>
+        </div>
+        <div class="col-6">
+          <figure>
+            <img src="street_wide.jpg" alt="Moved forward, wider focal, match framing" />
+          </figure>
+        </div>
+      </div>
+      <h3>Observation</h3>
+      <p>Changing camera position (center of projection) changes perspective. Focal length crops/magnifies: perspective flattening comes from shooting farther away, not from focal length alone.</p>
+    </section>
+
+    <!-- ===== PART 3 ===== -->
+    <section id="part3" class="section">
+      <h2>Part 3: The Dolly Zoom</h2>
+      <p>Simultaneous dolly back (increase distance) and zoom in (increase focal length) to approximately preserve subject size while the background appears to expand/contract.</p>
+      <!-- If you have a GIF, use <img>. If you exported MP4/WebM, use <video>. Keep one and delete the other. -->
+      <figure class="col-12" style="margin-top: .5rem">
+        <img src="dolly.gif" alt="Dolly zoom animation" />
+        <figcaption><strong>Animated result.</strong> Background scale shifts relative to the subject as distance and focal length change inversely.</figcaption>
+      </figure>
+
+      </div>
+    </section>
+
+
+  </main>
+
+</body>
+</html>
