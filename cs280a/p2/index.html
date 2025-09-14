@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CS180/CS280A · Project 1 – Prokudin-Gorskii Colorization</title>
+  <style>
+    :root{--maxw:1100px;--accent:#003262;--border:#e6e6e6;--muted:#666;--card:#fafafa}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";line-height:1.6;color:#111}
+    header{border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fdfdfd,#fcfcfc)}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:1.2rem}
+    h1{margin:.2rem 0;font-size:clamp(1.2rem,2vw + .9rem,2rem)}
+    nav{position:sticky;top:0;background:#fffccfb3;border-bottom:1px solid var(--border);z-index:10}
+    nav .wrap{display:flex;gap:1rem;flex-wrap:wrap}
+    nav a{padding:.65rem .4rem;font-weight:600;color:var(--accent);text-decoration:none}
+    h2{margin:1.2rem 0 .6rem;font-variant:small-caps;text-align:center}
+    p{margin:.4rem 0}
+    .section{padding:.8rem 0 1.2rem;border-bottom:1px solid var(--border)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem}
+    .col-4{grid-column:span 4}.col-6{grid-column:span 6}.col-12{grid-column:span 12}
+    @media (max-width:900px){.col-4,.col-6{grid-column:span 12}}
+    figure{margin:0;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+    figure img{display:block;width:100%;height:auto}
+    figcaption{padding:.55rem .75rem;font-size:.94rem;background:#fff}
+    table{width:100%;border-collapse:collapse;font-size:.95rem}
+    th,td{border:1px solid var(--border);padding:.45rem .55rem;text-align:left}
+    tr:nth-child(odd){background:#fafafa}
+    footer{color:var(--muted);font-size:.9rem;padding:2rem 0;text-align:center}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Project 1 — Colorizing the Prokudin-Gorskii Collection</h1>
+  </div>
+</header>
+
+
+<main class="wrap">
+
+  <section id="part1" class="section">
+    <h2>Part 1 — Single-scale Alignment</h2>
+    <p>
+      Exhaustive integer translation over a small window, scoring with NCC on an inner crop (to ignore borders).
+      G and R are aligned to B.
+    </p>
+    <div class="grid">
+      <div class="col-4">
+        <figure>
+          <a href="result/part1_monastery.png"><img src="result/part1_monastery.png" alt="monastery, single-scale"/></a>
+          <figcaption><strong>monastery</strong> (single-scale)</figcaption>
+        </figure>
+      </div>
+      <div class="col-4">
+        <figure>
+          <a href="result/part1_cathedral.png"><img src="result/part1_cathedral.png" alt="cathedral, single-scale"/></a>
+          <figcaption><strong>cathedral</strong> (single-scale)</figcaption>
+        </figure>
+      </div>
+      <div class="col-4">
+        <figure>
+          <a href="result/part1_tobolsk.png"><img src="result/part1_tobolsk.png" alt="tobolsk, single-scale"/></a>
+          <figcaption><strong>tobolsk</strong> (single-scale)</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="part2" class="section">
+    <h2>Part 2 — Multi-scale Pyramid</h2>
+    <p>
+      For large plates, a Gaussian pyramid is built and offsets are refined from coarse to fine.
+      This recovers large shifts efficiently while keeping each search window small.
+    </p>
+    <div class="grid">
+      <div class="col-6"><figure><a href="result/result_emir.tif.png"><img src="result/result_emir.tif.png" alt="emir"/></a><figcaption><strong>emir.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_harvesters.tif.png"><img src="result/result_harvesters.tif.png" alt="harvesters"/></a><figcaption><strong>harvesters.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_self_portrait.tif.png"><img src="result/result_self_portrait.tif.png" alt="self portrait"/></a><figcaption><strong>self_portrait.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_lady.tif.png"><img src="result/result_lady.tif.png" alt="lady"/></a><figcaption><strong>lady.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_melons.tif.png"><img src="result/result_melons.tif.png" alt="melons"/></a><figcaption><strong>melons.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_onion_church.tif.png"><img src="result/result_onion_church.tif.png" alt="onion church"/></a><figcaption><strong>onion_church.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_sculpture.tif.png"><img src="result/result_sculpture.tif.png" alt="sculpture"/></a><figcaption><strong>sculpture.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_three_generations.tif.png"><img src="result/result_three_generations.tif.png" alt="three generations"/></a><figcaption><strong>three_generations.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_train.tif.png"><img src="result/result_train.tif.png" alt="train"/></a><figcaption><strong>train.tif</strong></figcaption></figure></div>
+      <div class="col-6"><figure><a href="result/result_icon.tif.png"><img src="result/result_icon.tif.png" alt="icon"/></a><figcaption><strong>icon.tif</strong></figcaption></figure></div>
+      <div class="col-4"><figure><a href="result/result_cathedral.jpg.png"><img src="result/result_cathedral.jpg.png" alt="cathedral"/></a><figcaption><strong>cathedral.jpg</strong> (pyramid)</figcaption></figure></div>
+      <div class="col-4"><figure><a href="result/result_monastery.jpg.png"><img src="result/result_monastery.jpg.png" alt="monastery"/></a><figcaption><strong>monastery.jpg</strong> (pyramid)</figcaption></figure></div>
+      <div class="col-4"><figure><a href="result/result_tobolsk.jpg.png"><img src="result/result_tobolsk.jpg.png" alt="tobolsk"/></a><figcaption><strong>tobolsk.jpg</strong> (pyramid)</figcaption></figure></div>
+    </div>
+  </section>
+
+  <section id="bells" class="section">
+    <h2>Bells &amp; Whistles</h2>
+
+    <h3>Automatic Cropping</h3>
+    <figure>
+      <a href="result/auto_crop.png"><img src="result/auto_crop.png" alt="auto crop"/></a>
+      <figcaption>
+        Borders are almost flat, interiors have more edges. I compute Sobel edge profiles along rows/columns and
+        crop when cumulative edge energy rises above the border level. OpenCV/Sobel + NumPy handle the profiles.
+      </figcaption>
+    </figure>
+
+    <h3>White Balance</h3>
+    <figure>
+      <a href="result/white_balance.png"><img src="result/white_balance.png" alt="white balance"/></a>
+      <figcaption>
+        Assumes the average scene color should be gray. OpenCV <code>xphoto</code> Gray-world scales R/G/B so their means
+        match, reducing color casts while protecting highlights.
+      </figcaption>
+    </figure>
+
+    <h3>Auto-Contrast</h3>
+    <figure>
+      <a href="result/auto_contrast.png"><img src="result/auto_contrast.png" alt="auto contrast"/></a>
+      <figcaption>
+        Expands dynamic range by clipping a tiny percent of extremes and stretching intensities.
+        Pillow <code>ImageOps.autocontrast</code> performs the clipping and rescale in one call.
+      </figcaption>
+    </figure>
+
+    <h3>Better Color Mapping</h3>
+    <figure>
+      <a href="result/lab_chroma_match.png"><img src="result/lab_chroma_match.png" alt="Lab chroma match"/></a>
+      <figcaption>
+        Convert the image to Lab, keep its original lightness (L*), and histogram-match only the color channels (a*, b*) to a natural reference (skimage’s <code>data.astronaut()</code>). Using <code>skimage.color</code> and <code>exposure.match_histograms</code> nudges hues toward natural skin/sky/greens without changing brightness.
+      </figcaption>
+    </figure>
+
+    <h3>Better Features for Alignment</h3>
+    <figure>
+      <a href="result/better_features_alignment.png"><img src="result/better_features_alignment.png" alt="better features alignment"/></a>
+      <figcaption>
+        Align on edges instead of raw intensities. Scharr gradients emphasize structure; phase cross-correlation finds the translation robustly (both from <code>scikit-image</code>).
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="offsets" class="section">
+    <h2>Offsets (dy, dx)</h2>
+    <p>Displacements used to align channels (G→B and R→B) as printed by the program.</p>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Image</th><th>G → B</th><th>R → B</th></tr></thead>
+        <tbody>
+          <tr><td>emir.tif</td><td>(49, 24)</td><td>(103, 55)</td></tr>
+          <tr><td>monastery.jpg</td><td>(-3, 2)</td><td>(3, 2)</td></tr>
+          <tr><td>church.tif</td><td>(25, 4)</td><td>(58, -4)</td></tr>
+          <tr><td>three_generations.tif</td><td>(53, 14)</td><td>(112, 11)</td></tr>
+          <tr><td>melons.tif</td><td>(81, 10)</td><td>(178, 13)</td></tr>
+          <tr><td>onion_church.tif</td><td>(51, 27)</td><td>(108, 36)</td></tr>
+          <tr><td>train.tif</td><td>(42, 5)</td><td>(87, 32)</td></tr>
+          <tr><td>tobolsk.jpg</td><td>(3, 3)</td><td>(6, 3)</td></tr>
+          <tr><td>icon.tif</td><td>(41, 17)</td><td>(89, 23)</td></tr>
+          <tr><td>cathedral.jpg</td><td>(5, 2)</td><td>(12, 3)</td></tr>
+          <tr><td>self_portrait.tif</td><td>(79, 29)</td><td>(176, 37)</td></tr>
+          <tr><td>harvesters.tif</td><td>(59, 17)</td><td>(123, 13)</td></tr>
+          <tr><td>sculpture.tif</td><td>(33, -11)</td><td>(140, -27)</td></tr>
+          <tr><td>lady.tif</td><td>(51, 9)</td><td>(117, 11)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
