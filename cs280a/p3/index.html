@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CS280A Project 1 – Fun with Filters & Frequencies</title>
-  <meta name="description" content="Project 1 results for CS280A: Fun with Filters and Frequencies." />
+  <title>CS280A Project – Fun with Filters & Frequencies</title>
+  <meta name="description" content="Project results for CS280A: Fun with Filters and Frequencies." />
   <style>
     :root{
       --maxw: 1100px;
@@ -46,14 +46,17 @@
     figcaption{ padding:.55rem .8rem; font-size:.95rem; color:#333; background:#fff }
     footer{ color:var(--muted); font-size:.9rem; padding: 2rem 0; text-align:center }
     .pill{ background:var(--gold); color:#111; padding:.15rem .45rem; border-radius:999px; font-weight:700; font-size:.8rem }
+    .highlight{ background:var(--gold); color:#111; padding:.1rem .25rem; border-radius:3px; font-weight:600; font-size:.9rem }
+    .runtime-note{ background:var(--card); border-left:3px solid var(--accent); padding:.6rem .8rem; margin:.5rem 0; font-size:.95rem }
   </style>
 </head>
+
 <body>
 
 <header>
   <div class="wrap">
     <div class="brand">
-      <h1>CS280A Project 1 — Fun with Filters & Frequencies</h1>
+      <h1>CS280A Project — Fun with Filters & Frequencies</h1>
       <div class="meta"><strong>Author:</strong> Hossein Momeni · <strong>Course:</strong> CS280A</div>
     </div>
   </div>
@@ -77,10 +80,17 @@
   <section id="p11" class="section">
     <h2>Part 1.1 <span>Convolutions from Scratch</span></h2>
     <p class="lead">Implemented 4-loop and 2-loop 2D convolution with zero padding, and compared to <code>scipy.signal.convolve2d</code>.</p>
-    <p><em>Justification:</em> Zero padding ensured boundary consistency; comparison showed identical results but NumPy loops were slower than SciPy’s C-optimized function.</p>
+    
+    <div class="runtime-note">
+      <strong>Runtime Performance:</strong> 4-loop implementation: 2.664s • 2-loop (vectorized): 0.404s <span class="highlight">6.6× faster</span> • SciPy reference: 0.016s <span class="highlight">25× faster than 2-loop</span>
+    </div>
+    
+    <p><strong>Boundary Handling:</strong> Implemented zero padding with <code>kernel_size // 2</code> padding. True convolution achieved by flipping kernel with <code>np.flipud(np.fliplr(kernel))</code>. For advanced filtering, symmetric boundaries (<code>boundary="symm"</code>) minimize edge artifacts.</p>
+    
+    
     <figure>
       <img src="images/part1_convolutions.png" alt="Part 1.1: convolution results" />
-      <figcaption>Box filter (9×9) on grayscale portrait; Dx/Dy responses; runtime and boundary notes.</figcaption>
+      <figcaption>Box filter (9×9) and finite difference operators showing identical results across implementations. Performance benchmarking reveals significant speedup from vectorization.</figcaption>
     </figure>
   </section>
 
@@ -88,90 +98,312 @@
   <section id="p12" class="section">
     <h2>Part 1.2 <span>Finite Difference Operator</span></h2>
     <p class="lead">Cameraman: partials (Ix, Iy), gradient magnitude, and binarized edge map with a qualitatively chosen threshold.</p>
-    <p><em>Justification:</em> Threshold chosen to suppress noise while keeping the key structural edges (tripod, hat brim) visible.</p>
+    <p><em>Justification:</em> Threshold chosen to suppress noise while keeping the key structural edges (tripod, coat) visible.</p>
     <figure>
       <img src="images/part1_finite_difference_edges.png" alt="Part 1.2: finite difference edges" />
-      <figcaption>Left-to-right: input, Ix, Iy, |∇I|, thresholded edges.</figcaption>
     </figure>
   </section>
 
   <!-- ===== Part 1.3 ===== -->
   <section id="p13" class="section">
-    <h2>Part 1.3 <span>Derivative of Gaussian (DoG)</span></h2>
-    <p class="lead">Gaussian pre-smoothing reduces noise; DoG (G * Dx/Dy) matches blur-then-differentiate.</p>
-    <p><em>Justification:</em> The DoG yields smoother, more coherent edges than plain finite differences by attenuating noise before differentiation.</p>
+    <h2>Part 1.3 <span>Derivative of Gaussian (DoG) Filter</span></h2>
+    <p class="lead">The finite difference operator from Part 1.2 produced noisy edge maps. To address this, we apply Gaussian smoothing before differentiation, then verify that single-pass DoG filters produce identical results.</p>
+
+    <h3>Two-Step Approach: Gaussian Blur → Finite Differences</h3>
+    <p>First, we create a 2D Gaussian kernel using <code>cv2.getGaussianKernel()</code> to generate a 1D Gaussian, then taking the outer product to create a 2D kernel (σ=1.6, kernel size=9×9). Convolving the cameraman image with this Gaussian produces a smoothed version that significantly reduces high-frequency noise.</p>
+    
+    <div class="runtime-note">
+      <strong>Key Differences Observed:</strong> Gaussian pre-smoothing dramatically reduces noise artifacts while preserving major structural edges. The tripod legs, coat outline, and camera remain clearly defined, but fine texture noise is eliminated.
+    </div>
+
+    <p><strong>Implementation:</strong> Applied finite difference operators (Dx, Dy) to the Gaussian-blurred image, then computed gradient magnitude and thresholded edge maps. The resulting edges are much cleaner and more coherent than raw finite differences.</p>
+
+    <h3>Single-Pass DoG Filters: G ★ Dx and G ★ Dy</h3>
+    <p>Rather than two separate convolutions, we can achieve the same result with single-pass <strong>Derivative of Gaussian (DoG)</strong> filters by convolving the Gaussian kernel with the finite difference operators:</p>
+    <ul>
+      <li><strong>DoGx = G ★ Dx:</strong> Horizontal derivative of Gaussian filter</li>
+      <li><strong>DoGy = G ★ Dy:</strong> Vertical derivative of Gaussian filter</li>
+    </ul>
+
+    <div class="runtime-note">
+      <strong>Numerical Verification:</strong> Max difference between two-step and single-pass approaches: |Ix| ≈ 0.39, |Iy| ≈ 0.39, |∇I| ≈ 0.39 - demonstrating equivalence within numerical precision.
+    </div>
+
+    <p><strong>DoG Filter Visualization:</strong> The resulting DoG filters show the expected derivative structure - DoGx emphasizes vertical edges (horizontal gradients) while DoGy emphasizes horizontal edges (vertical gradients). Both maintain the Gaussian's smoothing properties while incorporating directional sensitivity.</p>
+
+
     <div class="grid two">
       <figure>
         <img src="images/part1_3_blur_then_diff.png" alt="Part 1.3: blur then finite difference" />
-        <figcaption>Blur then differentiate.</figcaption>
+        <figcaption><strong>Two-step approach:</strong> Gaussian blur followed by finite differences. Top row shows smoothed gradients; bottom row shows cleaner thresholded edges compared to Part 1.2.</figcaption>
       </figure>
       <figure>
         <img src="images/part1_3_dog.png" alt="Part 1.3: DoG filters output" />
-        <figcaption>Single-pass DoG.</figcaption>
+        <figcaption><strong>Single-pass DoG:</strong> Top row visualizes the DoG kernels themselves; bottom row shows identical edge detection results, confirming mathematical equivalence.</figcaption>
       </figure>
     </div>
+    
+    <h3>Bells & Whistles: Gradient Orientation in HSV Color Space</h3>
+    <p>So far we've detected <em>where</em> edges are, but what about <em>which direction</em> they point? This visualization shows edge orientation using a rainbow color scheme!</p>
+    
+    <h4>The Basic Idea: Colors = Directions</h4>
+    <p>Thinking like a compass, but instead of North/South/East/West, we use colors:</p>
+    <ul>
+      <li><strong>Red/Pink:</strong> Horizontal edges</li>
+      <li><strong>Cyan/Blue:</strong> Vertical edges</li>
+      <li><strong>Green/Yellow:</strong> Diagonal edges</li>
+    </ul>
+    
+    <h4>Step 1: Calculate Edge Direction</h4>
+    <p>We use the horizontal and vertical gradients (Ix, Iy) to figure out the angle, just like finding the direction of an arrow from its x and y components.</p>
+    
+    <h4>Step 2: Convert Direction to Color</h4>
+    <p>We use the <strong>HSV color system</strong>, which is perfect for this because:</p>
+    <ul>
+      <li><strong>Hue (the color itself):</strong> Represents the edge direction - 0° = red, 90° = green, 180° = cyan, 270° = blue</li>
+      <li><strong>Saturation (color intensity):</strong> Full intensity for clear edges, zero for noisy areas (making them black)</li>
+      <li><strong>Value (brightness):</strong> Brighter colors = stronger edges, dimmer colors = weaker edges</li>
+    </ul>
+    
+    <div class="runtime-note">
+      The rainbow color wheel naturally maps to directions - as you rotate around 360°, you cycle through all the colors. This makes it intuitive to see how edge directions change across the image.
+    </div>
+    
+    <h4>Step 3: Clean Up the Noise</h4>
+    <p>In flat areas (like the sky), there are no real edges, just random noise. We turn these areas black so they don't distract from the real edge structure with random colors.</p>
+    
     <figure>
       <img src="images/part1_orientation_hsv.png" alt="Bells & Whistles: orientation HSV" />
-      <figcaption><strong>Bells & Whistles:</strong> Gradient orientation visualized in HSV (hue=angle, value=|∇I|).</figcaption>
+      <figcaption><strong>Bells & Whistles:</strong> Gradient orientation visualization using HSV color mapping. Each hue represents a different edge direction: <strong>red/magenta</strong> = horizontal edges, <strong>cyan/blue</strong> = vertical edges, <strong>green/yellow</strong> = diagonal orientations. The tripod legs show beautiful color transitions as their orientation changes, while the cameraman's coat displays the complex directional structure of fabric edges.</figcaption>
     </figure>
   </section>
 
   <!-- ===== Part 2.1 ===== -->
   <section id="p21" class="section">
-    <h2>Part 2.1 <span>Image “Sharpening” (Unsharp Mask)</span></h2>
-    <p class="lead">High-frequency boost via <code>img + amount · (img − G_σ * img)</code>. Shows Taj and another example, with varying <em>amount</em>.</p>
-    <p><em>Justification:</em> Unsharp masking emphasizes edges by adding back lost high-frequency detail, improving clarity without altering flat regions.</p>
+    <h2>Part 2.1 <span>Image "Sharpening" (Unsharp Mask)</span></h2>
+    <p class="lead">Images can appear sharper by emphasizing their high-frequency details. We derive and implement the unsharp masking technique to enhance edge definition and overall image clarity.</p>
+
+    <h3>The Unsharp Masking Algorithm</h3>
+    <p>The technique works by isolating and amplifying high-frequency components:</p>
+    <ol>
+      <li><strong>Create low-pass version:</strong> Blur original image with Gaussian filter G</li>
+      <li><strong>Extract high frequencies:</strong> Subtract blurred version from original → <code>high = img - (img * G)</code></li>
+      <li><strong>Amplify and recombine:</strong> Add scaled high frequencies back → <code>sharp = img + amount × high</code></li>
+    </ol>
+
+    <div class="runtime-note">
+      <strong>Single Convolution Form:</strong> The entire operation can be expressed as a single filter: <code>sharp = img + amount × (img - img*G) = img × (1 + amount) - img*G × amount</code>, creating an unsharp mask kernel.
+    </div>
+
+    <h3>Implementation Details</h3>
+    <p><strong>Gaussian Filter:</strong> Custom 2D Gaussian generator with σ=1.6, automatic kernel sizing (6σ+1), and proper normalization. Uses symmetric boundary conditions to avoid edge artifacts during blurring.</p>
+    <p><strong>RGB Processing:</strong> Applies sharpening to each color channel independently, maintaining color fidelity while enhancing structural details across the entire visible spectrum.</p>
+    <p><strong>High-Frequency Visualization:</strong> Offset by 0.5 and clipped for display - shows the extracted edge information that gets amplified during sharpening.</p>
+
+    <h3>Results on Taj Mahal</h3>
     <figure>
-      <img src="images/part2_1_unsharp.png" alt="Unsharp results" />
-      <figcaption>Unsharp results (original, blurred, high-freq, sharpened).</figcaption>
+      <img src="images/part2_1_tai_steps.png" alt="Taj Mahal unsharp masking steps" />
+      <figcaption><strong>Unsharp masking process breakdown:</strong> Original Taj Mahal → Gaussian blur (σ=1.6) → Extracted high frequencies (centered at 0.5) → Final sharpened result (amount=1.0). Note how architectural details and texture become more defined.</figcaption>
     </figure>
+
+    <h3>Effect of Sharpening Amount</h3>
+    <p>The <strong>amount</strong> parameter controls sharpening intensity. Higher values create more dramatic edge enhancement but can introduce artifacts or over-sharpening:</p>
+    <figure>
+      <img src="images/part2_1_tai_amounts.png" alt="Taj Mahal varying sharpening amounts" />
+      <figcaption><strong>Sharpening amount comparison:</strong> Original → amount=0.1 (subtle) → amount=1.0 (moderate) → amount=2.5 (aggressive). Notice how fine architectural details become progressively more pronounced, but excessive sharpening (2.5) begins to create unnatural edge artifacts.</figcaption>
+    </figure>
+
+    <h3>Generalization to Other Images</h3>
+    <p>To demonstrate the technique's versatility, I applied the same parameters (σ=1.6, amount=1.0) to the classic astronaut image:</p>
+    <figure>
+      <img src="images/part2_1_other_steps.png" alt="Astronaut unsharp masking steps" />
+      <figcaption><strong>Astronaut sharpening process:</strong> The same unsharp masking parameters effectively enhance facial features, helmet details, and background elements, demonstrating the technique's broad applicability across different image content and textures.</figcaption>
+    </figure>
+
+    <p><em>Justification:</em> Unsharp masking works because human visual perception is particularly sensitive to edge contrast. By amplifying high-frequency details while preserving low-frequency structure, we enhance perceived sharpness without introducing noise in smooth regions. This makes images appear clearer and more defined, which is why this technique is widely used in digital photography and image processing.</p>
   </section>
 
   <!-- ===== Part 2.2 ===== -->
   <section id="p22" class="section">
     <h2>Part 2.2 <span>Hybrid Images</span></h2>
-    <p class="lead">Low-pass ⊕ high-pass; one pair with FFT analysis; two additional pairs.</p>
-    <p><em>Justification:</em> Close-up perception is dominated by the high-pass, while distant viewing reveals the low-pass; color in the high-pass strengthened the effect.</p>
+    <p class="lead">Create images that change interpretation based on viewing distance by combining high-frequency details from one image with low-frequency structure from another, following the approach from Oliva, Torralba, and Schyns (SIGGRAPH 2006).</p>
+
+    <h3>The Science Behind Hybrid Images</h3>
+    <p>Human visual perception processes different spatial frequencies at different viewing distances. <strong>High frequencies</strong> (fine details, edges) dominate when viewing close-up, while only <strong>low frequencies</strong> (overall shapes, colors) are visible from a distance. Hybrid images exploit this by strategically combining these frequency components from two different source images.</p>
+
+
+    <h3>Algorithm Implementation</h3>
+    <p>The hybrid image creation process involves careful frequency domain manipulation:</p>
+    <ol>
+      <li><strong>Low-pass filtering:</strong> Apply 2D Gaussian filter to extract smooth, structural components</li>
+      <li><strong>High-pass filtering:</strong> Subtract Gaussian-filtered result from original to isolate fine details</li>
+      <li><strong>Alignment & combination:</strong> Precisely align source images and blend filtered results</li>
+    </ol>
+
+    <p><strong>Critical Parameters:</strong> <code>sigma_low</code> controls how much low-frequency detail to preserve, while <code>sigma_high</code> determines which high-frequency components survive. These must be tuned experimentally for optimal perceptual effect.</p>
+
+    <h3>Featured Example: Derek + Nutmeg with Frequency Analysis</h3>
+    <p>This analysis demonstrates the complete hybrid image pipeline with Fourier domain visualization.</p>
+
     <figure>
-      <img src="images/part2_2_derek_nutmeg_full.png" alt="Derek + Nutmeg, full analysis" />
-      <figcaption>Derek + Nutmeg: originals, filtered, FFT log-magnitudes, final hybrid.</figcaption>
+      <img src="images/part2_2_derek_nutmeg_full.png" alt="Derek + Nutmeg complete frequency analysis" />
+      <figcaption><strong>Complete frequency analysis:</strong> Top row shows original source images and their FFT log-magnitude spectra. Middle row displays the filtered results - Derek's high-pass filtered face (σ=5.0) emphasizes facial details, while Nutmeg's low-pass version (σ=2.0) provides the underlying cat structure. Bottom row shows the final hybrid and its frequency spectrum, demonstrating how both frequency components coexist in the combined result.</figcaption>
     </figure>
+
+    <div class="runtime-note">
+      <strong>Frequency Domain Insights:</strong> The FFT visualizations reveal how filtering reshapes the frequency content - low-pass filtering concentrates energy in the center (low frequencies), while high-pass filtering preserves edge information in the outer regions. The hybrid combines both distributions.
+    </div>
+
+    <h3>Additional Hybrid Image Examples</h3>
+    <p>To demonstrate the technique's versatility, I created two additional hybrid pairs with different subject:</p>
+
+    <div class="grid two">
+      <figure>
+        <img src="images/part2_2_happy_sad.png" alt="Happy-Sad face hybrid" />
+        <figcaption><strong>Emotional transformation:</strong> Happy face (high-pass, σ=6.0) + Sad face (low-pass, σ=4.0). Up close, you see the smiling expression; from a distance, the underlying sadness becomes apparent.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/part2_2_mug_candle.png" alt="Mug-Candle object hybrid" />
+        <figcaption><strong>Object morphing:</strong> Coffee mug (high-pass, σ=3.0) + Candle (low-pass, σ=3.0). The ceramic details and handle are visible up close, while the candle's overall form and flame emerge at viewing distance. Equal sigma values create a balanced perceptual transition.</figcaption>
+      </figure>
+    </div>
+
+    <h3>Bells & Whistles: Color Enhancement Analysis</h3>
+    <p>Color significantly impacts hybrid image effectiveness. I explored three color strategies using the YUV color space to separate luminance from chrominance information:</p>
+
     <figure>
-      <img src="images/part2_2_color_hybrid_compare.png" alt="Color vs grayscale hybrid comparison" />
-      <figcaption><strong>Bells & Whistles:</strong> Using color to enhance the effect.</figcaption>
+      <img src="images/part2_2_derek_nutmeg_chroma.png" alt="Color hybrid variations" />
+      <figcaption><strong>Color strategy comparison:</strong> <em>Left:</em> Low-color (chroma from Nutmeg) - cat colors dominate overall appearance. <em>Middle:</em> High-color (chroma from Derek) - human skin tones are prominent up close. <em>Right:</em> Both-color (averaged chroma) - balanced color blending. The high-color approach proved most effective, as human perception is particularly sensitive to skin tone, making Derek's face more recognizable at close range.</figcaption>
     </figure>
+
+
+    <h3>Design Considerations & Results</h3>
+    <p><strong>Alignment Quality:</strong> Used interactive point correspondence for precise image registration - critical for perceptual grouping effects described in the original paper.</p>
+    <p><strong>Parameter Tuning:</strong> Sigma values varied by image pair (Derek/Nutmeg: 5.0/2.0, Happy/Sad: 6.0/4.0, Mug/Candle: 3.0/3.0) based on content detail level and desired transition characteristics.</p>
+    <p><strong>Perceptual Validation:</strong> Optimal viewing involves looking at the image from arm's length, then stepping back 6-8 feet to observe the perceptual shift. The Derek/Nutmeg hybrid shows the most dramatic transformation due to high structural contrast between human and feline features.</p>
+
   </section>
 
   <!-- ===== Part 2.3 ===== -->
   <section id="p23" class="section">
     <h2>Part 2.3 <span>Gaussian & Laplacian Stacks</span></h2>
-    <p class="lead">Stacks (no downsampling). Visualized for the Oraple pair.</p>
-    <p><em>Justification:</em> Stacks keep all images the same size, making it easier to combine Laplacian levels directly during blending.</p>
+    <p class="lead">Build frequency-selective image representations without downsampling, preparing for multiresolution blending. Unlike pyramids, stacks maintain consistent dimensions across all levels, enabling direct combination during the blending process.</p>
+
+    <h3>Gaussian vs. Laplacian Stacks: Core Concepts</h3>
+    <p><strong>Gaussian Stack:</strong> Progressive low-pass filtering where each level removes higher frequencies while preserving image dimensions. Level 0 = original image, each subsequent level becomes smoother by applying Gaussian convolution.</p>
+    
+    <p><strong>Laplacian Stack:</strong> Band-pass representation capturing specific frequency ranges. Each level isolates frequency bands by computing differences between consecutive Gaussian levels: <code>L[i] = G[i] - G[i+1]</code>. The final level stores the lowest frequency residual.</p>
+
+    <div class="runtime-note">
+      <strong>Stack vs. Pyramid:</strong> Traditional pyramids downsample at each level (½ size), making reconstruction complex. Stacks maintain full resolution, allowing element-wise operations during blending without interpolation artifacts. This is crucial for seamless image fusion.
+    </div>
+
+    <h3>Implementation Architecture</h3>
+    <p><strong>Gaussian Stack Generation:</strong></p>
+    <ol>
+      <li>Start with original image as level 0</li>
+      <li>Apply iterative Gaussian filtering (σ=2.0) to create progressively smoother versions</li>
+      <li>Each level: <code>G[i+1] = G[i] * gaussian2d(σ)</code></li>
+      <li>Maintain full spatial resolution throughout all 5 levels</li>
+    </ol>
+
+    <p><strong>Laplacian Decomposition:</strong></p>
+    <ol>
+      <li>Compute band-pass levels: <code>L[i] = G[i] - G[i+1]</code> for i = 0 to levels-2</li>
+      <li>Store final Gaussian as lowest frequency component: <code>L[levels-1] = G[levels-1]</code></li>
+      <li>Perfect reconstruction property: <code>original = Σ L[i]</code></li>
+    </ol>
+
+    <div class="runtime-note">
+        Laplacian stacks provide a complete frequency decomposition. High-index levels capture fine details and edges, while low-index levels preserve coarse structure. This separation enables frequency-specific blending operations.
+    </div>
+
+    <h3>Oraple Stack Analysis & Visualization</h3>
+    <p>Demonstrating the complete pipeline using the classic apple/orange example from Burt & Adelson (1983). This recreation shows how different frequency components contribute to the final seamless blend.</p>
+
     <figure>
-      <img src="images/part2_3_oraple_stacks.png" alt="Oraple Gaussian & Laplacian stacks" />
-      <figcaption>Gaussian and Laplacian stacks across levels.</figcaption>
+      <img src="images/part2_3_oraple_stacks.png" alt="Complete Oraple Laplacian stack visualization" />
+      <figcaption><strong>Oraple multiresolution analysis:</strong> Top three rows show representative Laplacian levels (L0=high freq, L2=mid freq, L4=low freq). Each row displays: Apple masked contribution × Orange masked contribution → Combined level. Bottom row shows reconstructed contributions and final seamless blend. Notice how fine apple texture dominates in L0, while orange's smooth regions appear in L4. The step mask becomes progressively blurred across levels, creating the smooth transition.</figcaption>
     </figure>
-  </section>
+
+    <h3>Mask Stack Behavior</h3>
+    <p>The binary step mask undergoes progressive Gaussian blurring at each stack level. This creates gradually smoother transitions:</p>
+    <ul>
+      <li><strong>Level 0:</strong> Sharp edge preserves fine detail boundaries</li>
+      <li><strong>Level 2:</strong> Moderate blur creates transition zone</li>
+      <li><strong>Level 4:</strong> Heavy blur produces wide, gentle seam</li>
+    </ul>
+
+    <div class="runtime-note">
+      <strong>Blending Mechanism:</strong> At each level i: <code>Blended[i] = Apple_L[i] × Mask_G[i] + Orange_L[i] × (1 - Mask_G[i])</code>. The progressive mask blurring ensures frequency-appropriate transition widths - sharp transitions for fine details, broad transitions for coarse structure.
+    </div>
+
+    </section>
 
   <!-- ===== Part 2.4 ===== -->
   <section id="p24" class="section">
-    <h2>Part 2.4 <span>Multiresolution Blending (Oraple)</span></h2>
-    <p class="lead">Stack-based Laplacian blending using a Gaussian mask stack. Vertical seam and irregular masks.</p>
-    <p><em>Justification:</em> Gaussian blurring of the mask at each level spreads the seam gradually, producing smooth transitions between sources.</p>
-    <figure>
-      <img src="images/part2_4_mug_candle_vertical.png" alt="Vertical seam blend example" />
-      <figcaption>Vertical seam blend.</figcaption>
-    </figure>
-    <div class="grid two">
-      <figure>
-        <img src="images/part2_4_color_mug_candle.png" alt="Color blend, irregular mask" />
-        <figcaption><strong>Bells & Whistles:</strong> Color blend with irregular mask.</figcaption>
-      </figure>
-      <figure>
-        <img src="images/part2_4_sad_hand_ellipse.png" alt="Irregular ellipse mask blend" />
-        <figcaption>Irregular (ellipse) mask blend.</figcaption>
-      </figure>
+    <h2>Part 2.4 <span>Multiresolution Blending</span></h2>
+    <p class="lead">Seamlessly fuse two images using Laplacian stack blending with Gaussian mask pyramids, implementing the Burt & Adelson (1983) algorithm. This technique creates smooth transitions impossible with simple alpha compositing by operating independently at each frequency band.</p>
+
+    <h3>The Multiresolution Blending Algorithm</h3>
+    <p>The core insight is that optimal blending requires different transition characteristics for different spatial frequencies. Fine details need sharp boundaries to preserve texture, while coarse features benefit from gradual transitions to avoid visible seams.</p>
+
+    <div class="runtime-note">
+      <strong>Key Innovation:</strong> Rather than blending in the spatial domain, we decompose images into frequency bands (Laplacian stacks), blur the mask appropriately for each band (Gaussian stack), then blend and reconstruct. This allows frequency-specific transition control.
     </div>
+
+    <h3>Algorithm Implementation</h3>
+    <ol>
+      <li><strong>Decomposition:</strong> Create Laplacian stacks for both source images (5-6 levels)</li>
+      <li><strong>Mask processing:</strong> Generate Gaussian stack for the binary mask with matching levels</li>
+      <li><strong>Frequency-specific blending:</strong> At each level i: <code>Result[i] = ImageA[i] × Mask[i] + ImageB[i] × (1-Mask[i])</code></li>
+      <li><strong>Reconstruction:</strong> Sum all blended levels to obtain the final composite</li>
+    </ol>
+
+    <h3>Vertical Seam Blending: Mug + Candle</h3>
+    <p>Demonstrating the technique with a clean vertical split between two distinct objects. The step mask creates different transition widths at each frequency level.</p>
+
+    <figure>
+      <img src="images/part2_4_mug_candle_vertical.png" alt="Vertical seam multiresolution blending" />
+      <figcaption><strong>Vertical seam example:</strong> Coffee mug (left half) seamlessly blended with candle (right half) using a sharp step mask. The algorithm automatically creates appropriate transition zones - tight boundaries for ceramic texture details, broader blending for overall lighting and color gradients. Parameters: 5 levels, σ=2.0.</figcaption>
+    </figure>
+
+
+    <h3>Irregular Mask Blending: Advanced Applications</h3>
+    <p>Moving beyond simple seams to complex mask shapes demonstrates the algorithm's versatility for creative composite generation.</p>
+
+    <figure>
+      <img src="images/part2_4_sad_hand_ellipse.png" alt="Elliptical mask blending example" />
+      <figcaption><strong>Elliptical mask composition:</strong> Sad face composited onto hand background using a small centered ellipse mask (rx=0.07×width, ry=0.03×height). The tiny mask creates a subtle facial feature insertion rather than a full face replacement. Parameters: 6 levels, σ=3.0 for enhanced smoothing. Notice how the algorithm maintains sharp facial detail while seamlessly blending skin tones and lighting.</figcaption>
+    </figure>
+
+    <h3>Bells & Whistles: Advanced Color Blending</h3>
+    <p>Extending multiresolution blending to the color domain using YUV separation for independent control of luminance and chrominance components. This allows sophisticated color manipulation during the blending process.</p>
+
+    <figure>
+      <img src="images/part2_4_color_mug_candle.png" alt="Advanced color blending variations" />
+      <figcaption><strong>Color-enhanced multiresolution blending:</strong> <em>Top row:</em> Source images (mug, candle) with cosine-smoothed mask for gradual transition. <em>Bottom row:</em> Three color strategies applied to Laplacian-blended luminance. <strong>Low-color:</strong> Candle's warm tones dominate. <strong>High-color:</strong> Mug's cooler ceramic colors preserved. <strong>Both-color:</strong> Balanced average creates neutral transition. The smooth mask (20% transition width with cosine ramp) produces more natural blending than sharp steps.</figcaption>
+    </figure>
+
+    <h3>Color Blending Technical Implementation</h3>
+    <p><strong>YUV Decomposition:</strong> Separate luminance (Y) from chrominance (UV) to enable independent processing of structural vs. color information.</p>
+    <p><strong>Luminance Blending:</strong> Apply full Laplacian stack blending to Y channel only, preserving structural details and edges.</p>
+    <p><strong>Chrominance Strategies:</strong></p>
+    <ul>
+      <li><strong>Source-selective:</strong> Take UV from one source image</li>
+      <li><strong>Blended:</strong> Weight UV channels according to final mask level</li>
+      <li><strong>Averaged:</strong> Simple mean of both UV channels</li>
+    </ul>
+
+    <div class="runtime-note">
+       The cosine-smoothed transition mask <code>0.5 × (1 + cos(π × ramp))</code> provides gentler blending than step functions. Combined with 20% transition width, this creates natural-looking seams that avoid the "cut-and-paste" appearance of sharp boundaries.
+    </div>
+
+    <h3>Comparison: Multiresolution vs. Simple Alpha Blending</h3>
+    <p><strong>Simple Alpha:</strong> Single transition width for all content - either preserves fine details with visible seams, or creates smooth transitions with blurred details.</p>
+    <p><strong>Multiresolution:</strong> Optimal transition width per frequency band - sharp preservation of texture details combined with smooth color/lighting gradients.</p>
+
+    <p><em>Justification:</em> Multiresolution blending represents a fundamental advancement over simple compositing techniques. By respecting the frequency structure of natural images, it produces seamless results that would be impossible with spatial-domain methods alone. The technique's success comes from matching the human visual system's multi-scale processing, creating composites that appear natural and artifact-free across all viewing distances.</p>
   </section>
 
 </main>
