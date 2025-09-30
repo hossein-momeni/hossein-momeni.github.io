@@ -35,6 +35,8 @@
     h3{ margin:1rem 0 .5rem; font-variant: small-caps }
     p{ margin:.45rem 0 }
     code{ background:var(--code); padding:.1em .35em; border-radius:4px }
+    pre{ background:var(--code); padding:1rem; border-radius:8px; overflow-x:auto; font-size:.9rem; line-height:1.4; margin:.8rem 0 }
+    pre code{ background:none; padding:0 }
     .section{ padding:.5rem 0 1.25rem; border-bottom:1px solid var(--border) }
     .lead{ font-size:1.03rem }
     .grid{ display:grid; gap: 1rem }
@@ -87,6 +89,37 @@
     
     <p><strong>Boundary Handling:</strong> Implemented zero padding with <code>kernel_size // 2</code> padding. True convolution achieved by flipping kernel with <code>np.flipud(np.fliplr(kernel))</code>. For advanced filtering, symmetric boundaries (<code>boundary="symm"</code>) minimize edge artifacts.</p>
     
+    <h3>Core Implementation</h3>
+    <pre><code>def pad_zero(img, kH, kW):
+    ph, pw = kH // 2, kW // 2
+    return np.pad(img, ((ph, ph), (pw, pw)), mode="constant")
+
+def conv2d_4loops(img, kernel):
+    k = np.flipud(np.fliplr(kernel)).astype(np.float32)  
+    kH, kW = k.shape
+    src = pad_zero(img.astype(np.float32), kH, kW)
+    H, W = img.shape
+    out = np.zeros((H, W), dtype=np.float32)
+    for y in range(H):
+        for x in range(W):
+            acc = 0.0
+            for ky in range(kH):
+                for kx in range(kW):
+                    acc += k[ky, kx] * src[y + ky, x + kx]
+            out[y, x] = acc
+    return out
+
+def conv2d_2loops(img, kernel):
+    k = np.flipud(np.fliplr(kernel)).astype(np.float32)
+    kH, kW = k.shape
+    src = pad_zero(img.astype(np.float32), kH, kW)
+    H, W = img.shape
+    out = np.zeros((H, W), dtype=np.float32)
+    for y in range(H):
+        for x in range(W):
+            window = src[y:y + kH, x:x + kW]
+            out[y, x] = np.sum(window * k)  # vectorized dot product
+    return out</code></pre>
     
     <figure>
       <img src="images/part1_convolutions.png" alt="Part 1.1: convolution results" />
